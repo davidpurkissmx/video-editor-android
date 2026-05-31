@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Video Editor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { min-height: 100vh; min-height: 100dvh; background: #0f0f0f; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e0e0e0; padding: 20px 14px 40px; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  header { max-width: 560px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon { font-size: 26px; }
+  .brand-name { font-size: 18px; font-weight: 700; color: #fff; }
+  .brand-sub { font-size: 11px; color: #555; }
+  .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: 24px 20px; max-width: 560px; margin: 0 auto 18px; }
+  h2 { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 16px; text-transform: uppercase; letter-spacing: .5px; }
+  .mode-badge { font-size: 10px; background: #1a3a2a; color: #3a9a5a; padding: 2px 8px; border-radius: 99px; margin-left: 8px; }
+  .file-select { border: 2px dashed #333; border-radius: 12px; padding: 36px 20px; text-align: center; cursor: pointer; transition: border-color .2s, background .2s; }
+  .file-select:active { border-color: #c89820; background: rgba(200,152,32,.05); }
+  .file-icon { font-size: 36px; margin-bottom: 12px; }
+  .file-text { font-size: 15px; color: #bbb; }
+  .file-sub { font-size: 12px; color: #555; margin-top: 6px; }
+  .file-chosen { font-size: 13px; color: #c89820; margin-top: 10px; font-weight: 500; word-break: break-all; }
+  .options { margin-top: 16px; }
+  label.opt { font-size: 13px; color: #888; display: block; }
+  select { background: #111; border: 1px solid #333; border-radius: 8px; color: #ddd; font-size: 13px; padding: 8px 12px; outline: none; width: 100%; margin-top: 6px; transition: border-color .2s; -webkit-appearance: none; }
+  select:focus { border-color: #c89820; }
+  .btn-primary { width: 100%; padding: 14px; background: #c89820; border: none; border-radius: 12px; color: #000; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 20px; transition: opacity .2s; }
+  .btn-primary:active { opacity: .9; }
+  .btn-primary:disabled { opacity: .4; }
+  .progress-wrap { margin-top: 20px; display: none; }
+  .progress-label { font-size: 13px; color: #888; margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .progress-bar-bg { height: 8px; background: #222; border-radius: 99px; overflow: hidden; }
+  .progress-bar { height: 100%; background: #c89820; border-radius: 99px; transition: width .4s ease; width: 0%; }
+  .progress-status { font-size: 13px; color: #bbb; margin-top: 10px; min-height: 18px; }
+  .result-card { background: #111; border: 1px solid #2a2a2a; border-radius: 12px; padding: 20px; margin-top: 20px; display: none; text-align: center; }
+  .result-card.show { display: block; }
+  .result-icon { font-size: 32px; margin-bottom: 10px; }
+  .result-title { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+  .result-stats { font-size: 13px; color: #777; margin-bottom: 18px; }
+  .result-stats span { color: #c89820; font-weight: 600; }
+  .btn-download { display: block; padding: 12px 28px; background: #1a7a3a; border: none; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; text-align: center; }
+  .btn-download:active { background: #1d9444; }
+  .btn-new { display: block; padding: 10px 20px; margin-top: 8px; background: transparent; border: 1px solid #333; border-radius: 10px; color: #888; font-size: 13px; cursor: pointer; width: 100%; text-align: center; }
+  .btn-new:active { border-color: #888; color: #ddd; }
+  .error-card { background: rgba(220,50,50,.1); border: 1px solid rgba(220,50,50,.25); border-radius: 12px; padding: 14px; margin-top: 16px; color: #f07070; font-size: 13px; display: none; position: relative; }
+  .error-card.show { display: block; }
+  .error-card .btn-copy-inline { position: absolute; top: 8px; right: 8px; background: #2a1a1a; border: 1px solid #5a2a2a; border-radius: 6px; color: #c07070; font-size: 10px; padding: 3px 8px; cursor: pointer; }
+  .log-box { background: #111; border: 1px solid #252525; border-radius: 10px; padding: 12px 14px; margin-top: 12px; font-family: monospace; font-size: 10px; color: #555; max-height: 250px; overflow-y: auto; display: none; white-space: pre-wrap; word-break: break-all; line-height: 1.4; }
+  .log-box.show { display: block; }
+  .btn-copy { display: none; }
+  .btn-copy.show { display: block; }
+  .btn-copy:active, .btn-copy-inline:active { border-color:#888; color:#ddd; }
+  .progress-status-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .btn-copy-status { background: #222; border: 1px solid #333; border-radius: 6px; color: #777; font-size: 10px; padding: 3px 8px; cursor: pointer; flex-shrink: 0; }
+  .info-list { list-style: none; }
+  .info-list li { padding: 10px 0; border-bottom: 1px solid #222; font-size: 13px; color: #777; display: flex; align-items: flex-start; gap: 10px; }
+  .info-list li:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="brand-icon">🎬</span>
+    <div>
+      <div class="brand-name">Video Editor <span class="mode-badge" id="modeBadge">MÓVIL</span></div>
+      <div class="brand-sub">FFmpeg local + ElevenLabs + Claude</div>
+    </div>
+  </div>
+</header>
+
+<div class="card">
+  <h2>Seleccionar video</h2>
+  <div class="file-select" id="fileSelect">
+    <div class="file-icon">📱</div>
+    <div class="file-text">Toca para elegir un video</div>
+    <div class="file-sub">MP4, MOV, MKV</div>
+    <div class="file-chosen" id="fileChosen"></div>
+  </div>
+  <div class="options">
+    <label class="opt">Idioma del video
+      <select id="language">
+        <option value="">Auto-detectar</option>
+        <option value="es" selected>Español</option>
+        <option value="en">Inglés</option>
+        <option value="pt">Portugués</option>
+        <option value="fr">Francés</option>
+      </select>
+    </label>
+  </div>
+  <button class="btn-primary" id="btnProcess" disabled>Procesar video</button>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-label">
+      <span id="progressLabel">Procesando...</span>
+      <span id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="progress-status-row">
+      <div class="progress-status" id="progressStatus"></div>
+      <button class="btn-copy-status" id="btnCopyStatus" onclick="copyStatus()" style="display:none">📋</button>
+    </div>
+    <div class="log-box" id="logBox"></div>
+    <button class="btn-copy" id="btnCopy" onclick="copyLog()" style="display:none;margin-top:6px;width:100%;padding:8px;background:#222;border:1px solid #333;border-radius:8px;color:#888;font-size:12px;cursor:pointer;">📋 Copiar log</button>
+  </div>
+  <div class="result-card" id="resultCard">
+    <div class="result-icon">✅</div>
+    <div class="result-title">¡Video listo!</div>
+    <div class="result-stats" id="resultStats"></div>
+    <button class="btn-download" id="btnDownload">Guardar en Películas</button>
+    <button class="btn-new" onclick="resetUI()">Procesar otro</button>
+  </div>
+  <div class="error-card" id="errorCard"><span id="errorText"></span><button class="btn-copy-inline" onclick="copyError()">📋 Copiar</button></div>
+</div>
+
+<div class="card">
+  <h2>Cómo funciona</h2>
+  <ul class="info-list">
+    <li>📂 El video se queda en tu celular — no se sube completo</li>
+    <li>⚡ FFmpeg corre 100% local con ffmpeg-kit</li>
+    <li>🎙️ Solo se envía el audio a ElevenLabs para transcribir</li>
+    <li>🧠 Claude AI genera el guion de edición (EDL)</li>
+    <li>✂️ Cortes, fades y render: todo en tu teléfono</li>
+  </ul>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let videoFile = null;
+const API_BASE = 'https://video.davidpurkiss.com';
+const API_KEY = (typeof ConfigBridge !== 'undefined') ? ConfigBridge.getApiKey() : '';
+const isNative = typeof FFmpegBridge !== 'undefined';
+let finalPath = null;
+let finalName = 'video_editado.mp4';
+
+if (!isNative) {
+  document.getElementById('modeBadge').textContent = 'WEB';
+  document.getElementById('modeBadge').style.background = '#3a2a1a';
+  document.getElementById('modeBadge').style.color = '#c89820';
+  document.body.innerHTML = '<div style="text-align:center;padding:60px 20px"><h2 style="color:#c89820">Solo Android</h2><p style="color:#777;margin-top:12px">Esta app solo funciona en la aplicaci\u00f3n Android.<br>Usa <a href="https://video.davidpurkiss.com" style="color:#c89820">video.davidpurkiss.com</a> desde tu navegador.</p></div>';
+}
+
+// ── Bridge helpers ─────────────────────────────────────────────
+let _cbId = 0;
+const _cbs = {};
+
+window._ffmpegCallback = function(id, r) {
+  const cb = _cbs[id]; if(!cb) return; delete _cbs[id];
+  r.success ? cb.resolve(r.output) : cb.reject(new Error(r.error || r.output || 'ffmpeg'));
+};
+
+window._fileBridgeCallback = function(id, r) {
+  const cb = _cbs[id]; if(!cb) return; delete _cbs[id];
+  r.error ? cb.reject(new Error(r.error)) : cb.resolve(r);
+};
+
+function _reg(id) { return new Promise((ok, err) => { _cbs[id] = { resolve: ok, reject: err }; }); }
+
+function ff(cmd) { const id='f'+(++_cbId); FFmpegBridge.exec(cmd, id); return _reg(id); }
+
+function ffWithTimeout(cmd, timeoutSec) {
+  return Promise.race([
+    ff(cmd),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout: ffmpeg tard\u00f3 m\u00e1s de ' + timeoutSec + 's')), timeoutSec * 1000))
+  ]);
+}
+function pickVideo() { const id='v'+(++_cbId); FileBridge.pickVideo(id); return _reg(id); }
+function saveVid(path, name) { const id='s'+(++_cbId); FileBridge.saveToDownloads(path, name, id); return _reg(id); }
+function writeFile(path, content) { FileBridge.writeTextFile(path, content); }
+function readB64(path) { const id='b'+(++_cbId); FileBridge.readFileAsBase64(path, id); return _reg(id); }
+function uploadAudio(path, lang) { const id='u'+(++_cbId); FileBridge.uploadAudio(path, API_BASE + '/api/transcribe', lang, API_KEY, id); return _reg(id); }
+function getWorkDir() { return FileBridge.getWorkDir(); }
+function deleteFile(path) { try { FileBridge.deleteFile(path); } catch(e) {} }
+
+function log(msg) {
+  const b = document.getElementById('logBox');
+  b.textContent = (b.textContent || '') + msg + '\n';
+  b.scrollTop = b.scrollHeight;
+  b.classList.add('show');
+  document.getElementById('btnCopy').classList.add('show');
+}
+
+function copyLog() {
+  const text = document.getElementById('logBox').textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btnCopy');
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copiado!';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  }).catch(() => {
+    // Fallback for WebView
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      const btn = document.getElementById('btnCopy');
+      btn.textContent = '✅ Copiado!';
+      setTimeout(() => { btn.textContent = '📋 Copiar log'; }, 1500);
+    } catch(e) {}
+  });
+}
+
+// ── UI refs ────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fileChosen = $('fileChosen');
+const btnProcess = $('btnProcess');
+const progressWrap = $('progressWrap');
+const progressBar = $('progressBar');
+const progressPct = $('progressPct');
+const progressStatus = $('progressStatus');
+const resultCard = $('resultCard');
+const resultStats = $('resultStats');
+const btnDownload = $('btnDownload');
+const errorCard = $('errorCard');
+
+$('fileSelect').addEventListener('click', async () => {
+  if (!isNative) return;
+  try {
+    setStatus('Seleccionando...');
+    videoFile = await pickVideo();
+    fileChosen.textContent = videoFile.name + ' \u00b7 ' + (videoFile.size / 1048576).toFixed(1) + ' MB';
+    btnProcess.disabled = false;
+    setStatus('Listo');
+  } catch(e) { showError('Error: ' + e.message); }
+});
+
+btnProcess.addEventListener('click', async () => {
+  if (!videoFile) return;
+  btnProcess.disabled = true;
+  progressWrap.style.display = 'block';
+  resultCard.classList.remove('show');
+  errorCard.classList.remove('show');
+  $('logBox').textContent = '';
+  $('logBox').classList.add('show');
+  try { await runPipeline(videoFile.path, videoFile.name, $('language').value); }
+  catch(e) { showError(e.message); btnProcess.disabled = false; }
+});
+
+btnDownload.addEventListener('click', async () => {
+  if (!finalPath) return;
+  try { btnDownload.textContent='Guardando...'; btnDownload.disabled=true;
+    await saveVid(finalPath, finalName);
+    btnDownload.textContent='Guardar en Pel\u00edculas'; btnDownload.disabled=false; }
+  catch(e) { showError('Error al guardar: '+e.message); btnDownload.textContent='Guardar en Pel\u00edculas'; btnDownload.disabled=false; }
+});
+
+function setStatus(m) { progressStatus.textContent = m; }
+function setProgress(p, m) { progressBar.style.width = p+'%'; progressPct.textContent = p+'%'; progressStatus.textContent = m; $('btnCopyStatus').style.display = m ? 'inline-block' : 'none'; }
+function showError(m) { $('errorText').textContent = '\u274c ' + m; errorCard.classList.add('show'); }
+
+function copyError() { copyToClipboard($('errorText').textContent || '', $('errorCard').querySelector('.btn-copy-inline')); }
+function copyStatus() { copyToClipboard(progressStatus.textContent || '', $('btnCopyStatus')); }
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '\u2705'; setTimeout(() => { btn.textContent = orig; }, 1500);
+  }).catch(() => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.opacity = '0'; ta.style.position = 'fixed';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      btn.textContent = '\u2705'; setTimeout(() => { btn.textContent = orig; }, 1500);
+    } catch(e) {}
+  });
+}
+
+function resetUI() {
+  videoFile = null; fileChosen.textContent = ''; btnProcess.disabled = true;
+  progressWrap.style.display = 'none'; resultCard.classList.remove('show');
+  errorCard.classList.remove('show'); $('logBox').classList.remove('show'); $('logBox').textContent = '';
+  $('btnCopy').classList.remove('show');
+  finalPath = null; finalName = 'video_editado.mp4'; setProgress(0, '');
+  btnDownload.textContent = 'Guardar en Pel\u00edculas'; btnDownload.disabled = false;
+}
+
+// ── Pipeline ───────────────────────────────────────────────────
+async function runPipeline(src, name, lang) {
+  const wd = getWorkDir();
+  const job = wd + '/job_' + Date.now();
+  const compressed = job + '/source_c.mp4';
+  const audio = job + '/audio.wav';
+
+  writeFile(job + '/.created', ''); // mkdir -p
+  log('\u2500\u2500 Pipeline iniciado \u2500\u2500');
+  log('Fuente: ' + name);
+
+  // 1. Compress
+  setProgress(5, 'PASO 1/5: Comprimiendo video...');
+  log('\u2500\u2500 [1/5] COMPRESI\u00d3N \u2500\u2500');
+  log('  Fuente: ' + name);
+  log('  Destino: ' + compressed);
+  let t0 = Date.now();
+
+  // Show elapsed every 3s
+  const elapsedInterval = setInterval(() => {
+    const elapsed = Math.round((Date.now() - t0) / 1000);
+    setStatus('Comprimiendo... ' + elapsed + 's');
+  }, 3000);
+
+  try {
+    await ffWithTimeout(
+      '-y -i ' + src + ' -c:v libx264 -preset fast -crf 28 -vf "scale=w=1920:h=-2" -c:a aac -b:a 96k -movflags +faststart -hide_banner -loglevel error ' + compressed,
+      600
+    );
+  } finally {
+    clearInterval(elapsedInterval);
+  }
+  log('  \u2713 Completado en ' + ((Date.now()-t0)/1000).toFixed(1) + 's');
+
+  // 2. Extract audio
+  setProgress(20, 'PASO 2/5: Extrayendo audio...');
+  log('\u2500\u2500 [2/5] EXTRACCI\u00d3N DE AUDIO \u2500\u2500');
+  t0 = Date.now();
+  await ff('-y -i ' + compressed + ' -vn -ac 1 -ar 16000 -c:a pcm_s16le -hide_banner -loglevel error ' + audio);
+  log('  \u2713 OK (' + ((Date.now()-t0)/1000).toFixed(1) + 's)');
+
+  // 3. Upload audio for transcription
+  setProgress(30, 'PASO 3/5: Enviando audio al servidor...');
+  log('\u2500\u2500 [3/5] TRANSCRIPCI\u00d3N (ElevenLabs) \u2500\u2500');
+  t0 = Date.now();
+  log('  Subiendo audio al servidor...');
+  const trResp = await uploadAudio(audio, lang);
+  log('  Respuesta recibida en ' + ((Date.now()-t0)/1000).toFixed(1) + 's');
+  const tr = JSON.parse(trResp.body);
+  if (tr.error) throw new Error(tr.error);
+  const wordCount = tr.words ? tr.words.length : 0;
+  log('  Palabras transcritas: ' + wordCount);
+
+  // 4. Pack transcripts locally
+  setProgress(50, 'PASO 4/5: Analizando transcripci\u00f3n...');
+  log('\u2500\u2500 [4/5] EMPAQUETADO \u2500\u2500');
+  const packed = packTranscripts(tr);
+  log('  Frases detectadas: ' + (packed.match(/^  \[/gm) || []).length);
+
+  // 5. Get EDL from Claude
+  setProgress(60, 'PASO 5/5: Claude generando EDL...');
+  log('\u2500\u2500 [5/5] EDL (Claude) \u2500\u2500');
+  t0 = Date.now();
+  const edl = await getEDL(packed, name.replace(/\.[^.]+$/, ''));
+  log('  Claude respondi\u00f3 en ' + ((Date.now()-t0)/1000).toFixed(1) + 's');
+  const nRanges = edl.ranges ? edl.ranges.length : 0;
+  log('  Segmentos a conservar: ' + nRanges);
+
+  // 6. Render locally
+  setProgress(70, 'Renderizando ' + nRanges + ' segmentos...');
+  log('\u2500\u2500 RENDER (ffmpeg local) \u2500\u2500');
+  log('  Procesando ' + nRanges + ' segmentos...');
+  t0 = Date.now();
+  await renderEDL(edl, compressed, job, (i, total) => {
+    const pct = 70 + Math.round(i/total*25);
+    setProgress(pct, 'Render ' + i + '/' + total + '...');
+  });
+  log('  \u2713 Render completado en ' + ((Date.now()-t0)/1000).toFixed(1) + 's');
+
+  // 7. Done
+  setProgress(98, 'Finalizando...');
+  finalPath = job + '/final.mp4';
+  finalName = name.replace(/\.[^.]+$/, '') + '_editado.mp4';
+
+  deleteFile(compressed); deleteFile(audio);
+  log('\u2500\u2500 \u2713 COMPLETADO \u2500\u2500');
+  log('  Archivo: ' + finalName);
+
+  resultStats.innerHTML = '<span>' + nRanges + '</span> segmentos conservados de ' + finalName;
+  resultCard.classList.add('show');
+  progressWrap.style.display = 'none';
+}
+
+// ── Transcript packing ─────────────────────────────────────────
+function packTranscripts(data) {
+  const words = data.words || [];
+  const TH = 0.5;
+  const fmt = s => s.toFixed(2).padStart(6, '0');
+
+  let phrases = [], cur = [], curStart = null, prevEnd = null;
+
+  for (const w of words) {
+    if (w.type === 'spacing') {
+      if (w.start != null && w.end != null && (w.end - w.start) >= TH) {
+        if (cur.length) {
+          phrases.push({ start: curStart, end: cur[cur.length-1].end || w.start,
+            text: cur.map(x => x.text||'').join(' ').replace(/ ,/g, ',').replace(/ \./g, '.') });
+          cur = []; curStart = null;
+        }
+      }
+      continue;
+    }
+    const s = w.start; if (s == null) continue;
+    if (prevEnd != null && s - prevEnd >= TH) {
+      if (cur.length) {
+        phrases.push({ start: curStart, end: cur[cur.length-1].end || s,
+          text: cur.map(x => x.text||'').join(' ').replace(/ ,/g, ',').replace(/ \./g, '.') });
+        cur = []; curStart = null;
+      }
+    }
+    if (curStart == null) curStart = s;
+    cur.push(w);
+    prevEnd = w.end || s;
+  }
+  if (cur.length) {
+    phrases.push({ start: curStart, end: cur[cur.length-1].end || 0,
+      text: cur.map(x => x.text||'').join(' ').replace(/ ,/g, ',').replace(/ \./g, '.') });
+  }
+
+  let md = '# Packed transcript\n\n';
+  md += 'Phrase-level, silences >=' + TH + 's.\n\n';
+  md += '## source  (' + phrases.length + ' phrases)\n';
+  for (const p of phrases) md += '  [' + fmt(p.start) + '-' + fmt(p.end) + '] ' + p.text + '\n';
+  return md;
+}
+
+// ── Server API: EDL ────────────────────────────────────────────
+async function getEDL(packedMd, srcName) {
+  const resp = await fetch(API_BASE + '/api/edl', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+    body: JSON.stringify({ packed_md: packedMd, source_name: srcName })
+  });
+  if (!resp.ok) {
+    const e = await resp.json().catch(()=>({error:'HTTP '+resp.status}));
+    throw new Error(e.error || 'Error EDL');
+  }
+  return resp.json();
+}
+
+// ── Local render ───────────────────────────────────────────────
+async function renderEDL(edl, srcPath, jobDir, onProgress) {
+  const ranges = edl.ranges || [];
+  const clipsDir = jobDir + '/clips';
+  writeFile(clipsDir + '/.created', ''); // mkdir -p
+
+  const segPaths = [];
+
+  for (let i = 0; i < ranges.length; i++) {
+    const r = ranges[i];
+    const start = parseFloat(r.start);
+    const end = parseFloat(r.end);
+    const dur = end - start;
+    const outPath = clipsDir + '/seg_' + String(i).padStart(3, '0') + '.mp4';
+    const foStart = Math.max(0, dur - 0.03);
+
+    const cmd =
+      '-y -ss ' + start.toFixed(3) +
+      ' -i ' + srcPath +
+      ' -t ' + dur.toFixed(3) +
+      ' -vf "scale=w=1920:h=-2"' +
+      ' -af "afade=t=in:st=0:d=0.03,afade=t=out:st=' + foStart.toFixed(3) + ':d=0.03"' +
+      ' -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p -r 24 -c:a aac -b:a 192k -ar 48000 -movflags +faststart -hide_banner -loglevel error ' + outPath;
+
+    await ff(cmd);
+    segPaths.push(outPath);
+    if (onProgress) onProgress(i + 1, ranges.length);
+  }
+
+  // Concat: use concat demuxer for reliable copy (all segments share same codec params)
+  log('\u2192 Concatenando ' + segPaths.length + ' segmentos...');
+  const basePath = jobDir + '/base.mp4';
+
+  if (segPaths.length === 1) {
+    // Single segment: copy is safe since segments use libx264 with same params
+    await ff('-y -i ' + segPaths[0] + ' -c copy -hide_banner -loglevel error ' + basePath);
+  } else {
+    // Multiple segments: concat demuxer via list file
+    const listPath = jobDir + '/list.txt';
+    writeFile(listPath, segPaths.map(p => "file '" + p + "'").join('\n'));
+    await ff('-y -f concat -safe 0 -i ' + listPath + ' -c copy -hide_banner -loglevel error ' + basePath);
+    deleteFile(listPath);
+  }
+
+  // Loudnorm
+  log('\u2192 Normalizando audio...');
+  const finalPath = jobDir + '/final.mp4';
+  await ff('-y -i ' + basePath + ' -c:v copy -af "loudnorm=I=-14:TP=-1:LRA=11" -c:a aac -b:a 192k -ar 48000 -movflags +faststart -hide_banner -loglevel error ' + finalPath);
+
+  // Cleanup
+  segPaths.forEach(p => deleteFile(p));
+  deleteFile(basePath);
+}
+</script>
+</body>
+</html>
