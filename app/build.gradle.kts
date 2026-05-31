@@ -3,9 +3,24 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Read API key from local.properties (not committed)
+val mobileApiKey: String = run {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) {
+        f.readLines()
+            .firstOrNull { it.startsWith("MOBILE_API_KEY=") }
+            ?.substringAfter("MOBILE_API_KEY=")
+            ?.trim() ?: ""
+    } else ""
+}
+
 android {
     namespace = "com.davidpurkiss.videoeditor"
     compileSdk = 35
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.davidpurkiss.videoeditor"
@@ -13,6 +28,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        buildConfigField("String", "MOBILE_API_KEY", "\"${mobileApiKey}\"")
     }
 
     buildTypes {
